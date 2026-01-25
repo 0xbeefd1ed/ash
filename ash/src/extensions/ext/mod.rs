@@ -12,6 +12,7 @@ pub mod extended_dynamic_state2;
 pub mod extended_dynamic_state3;
 pub mod full_screen_exclusive;
 pub mod hdr_metadata;
+pub mod descriptor_heap;
 pub mod headless_surface;
 pub mod host_image_copy;
 pub mod image_compression_control;

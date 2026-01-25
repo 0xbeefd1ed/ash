@@ -148,8 +148,8 @@ pub unsafe trait Extends<B> {}
 /// [`AccelerationStructureSRTMotionInstanceNV`] and
 /// [`AccelerationStructureMatrixMotionInstanceNV`].
 ///
-/// [acceleration structure instances]: https://docs.vulkan.org/refpages/latest/refpages/source/VkAccelerationStructureInstanceKHR.html#_description
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
+/// [acceleration structure instances]: https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkAccelerationStructureInstanceKHR.html#_description
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default)]
 #[repr(transparent)]
 pub struct Packed24_8(u32);
 
@@ -434,4 +434,21 @@ mod tests {
     fn test_debug_enum() {
         assert_eq!(format!("{:?}", vk::ChromaLocation::MIDPOINT), "MIDPOINT");
     }
+}
+
+pub enum PromotionStatus {
+    None,
+    PromotedToCore(u32),
+    PromotedToExtension(&'static core::ffi::CStr),
+}
+
+pub trait ExtensionMeta {
+    const NAME: &'static core::ffi::CStr;
+    const SPEC_VERSION: u32;
+    const PROMOTION_STATUS: PromotionStatus;
+
+    type Device;
+    fn load_device(instance: &crate::Instance, device: &crate::Device) -> Self::Device;
+    type Instance;
+    fn load_instance(entry: &crate::Entry, instance: &crate::Instance) -> Self::Instance;
 }

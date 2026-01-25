@@ -1286,7 +1286,11 @@ pub fn generate_extension_commands<'a>(
     fn_cache: &mut HashSet<&'a str>,
     has_lifetimes: &HashSet<Ident>,
 ) -> ExtensionCommands<'a> {
-    let full_extension_name = &extension.name;
+    let vk_parse::Extension {
+        name: full_extension_name,
+        promotedto,
+        ..
+    } = extension;
     let byte_name_ident = Literal::byte_string(format!("{full_extension_name}\0").as_bytes());
 
     let extension_name = full_extension_name.strip_prefix("VK_").unwrap();
@@ -1442,17 +1446,66 @@ pub fn generate_extension_commands<'a>(
         })
     });
 
+    let meta_impl = {
+        let promoted_version = match promotedto.as_ref().map(String::as_str) {
+            Some("VK_VERSION_1_1") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_1)),
+            Some("VK_VERSION_1_2") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_2)),
+            Some("VK_VERSION_1_3") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_3)),
+            Some("VK_VERSION_1_4") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_4)),
+            Some(full_name) => {
+                let ext_name = full_name.strip_prefix("VK_").unwrap();
+                let ident = format_ident!("{}_NAME", ext_name.to_uppercase());
+                quote!(PromotionStatus::PromotedToExtension(#ident))
+            }
+            _ => quote!(PromotionStatus::None),
+        };
+        let device_impl = if device_fp.is_some() {
+            quote! {
+                type Device = Device;
+                fn load_device(instance: &crate::Instance, device: &crate::Device) -> Device {
+                    Device::load(instance, device)
+                }
+            }
+        } else {
+            quote! {
+                type Device = ();
+                fn load_device(_instance: &crate::Instance, _device: &crate::Device){}
+            }
+        };
+        let instance_impl = if instance_fp.is_some() {
+            quote! {
+                type Instance = Instance;
+                fn load_instance(entry: &crate::Entry, instance: &crate::Instance) -> Instance {
+                    Instance::load(entry, instance)
+                }
+            }
+        } else {
+            quote! {
+                type Instance = ();
+                fn load_instance(_entry: &crate::Entry, _instance: &crate::Instance){}
+            }
+        };
+        quote! {
+            pub struct Meta;
+            impl ExtensionMeta for Meta {
+                const NAME: &'static CStr = #name_ident;
+                const SPEC_VERSION: u32 = #spec_version_ident;
+                const PROMOTION_STATUS: PromotionStatus = #promoted_version;
+                #device_impl
+                #instance_impl
+            }
+        }
+    };
+
     let (raw_device_fp, hl_device_fp) = device_fp.map_or((None, None), |(a, b)| (Some(a), Some(b)));
     let (raw_instance_fp, hl_instance_fp) =
         instance_fp.map_or((None, None), |(a, b)| (Some(a), Some(b)));
 
-    let hl_imports = (hl_instance_fp.is_some() || hl_device_fp.is_some()).then(|| {
-        quote!(
-            use core::ffi::*;
+    let hl_imports = quote!(
+        use core::ffi::*;
 
-            use crate::vk::*;
-        )
-    });
+        use crate::vk::*;
+    );
 
     let provisional = extension
         .provisional
@@ -1480,6 +1533,7 @@ pub fn generate_extension_commands<'a>(
 
                 #hl_instance_fp
                 #hl_device_fp
+                #meta_impl
             }
         },
     }

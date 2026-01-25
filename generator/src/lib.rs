@@ -1414,6 +1414,7 @@ pub fn generate_extension_commands<'a>(
             Some("VK_VERSION_1_1") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_1)),
             Some("VK_VERSION_1_2") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_2)),
             Some("VK_VERSION_1_3") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_3)),
+            Some("VK_VERSION_1_4") => quote!(PromotionStatus::PromotedToCore(API_VERSION_1_4)),
             Some(full_name) => {
                 let ext_name = full_name.strip_prefix("VK_").unwrap();
                 let ident = format_ident!("{}_NAME", ext_name.to_uppercase());

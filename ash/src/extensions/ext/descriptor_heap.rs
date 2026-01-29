@@ -1,6 +1,6 @@
 //! <https://docs.vulkan.org/refpages/latest/refpages/source/VK_EXT_descriptor_heap.html>
-use crate::VkResult;
 use crate::vk;
+use crate::VkResult;
 use std::mem;
 
 impl crate::ext::descriptor_heap::Device {
@@ -9,14 +9,14 @@ impl crate::ext::descriptor_heap::Device {
     pub unsafe fn get_image_opaque_capture_data(
         &self,
         images: &[vk::Image],
-        host_address_range: &mut vk::HostAddressRangeEXT<'_>,
+        host_address_range: &mut [vk::HostAddressRangeEXT<'_>],
     ) -> VkResult<()> {
         unsafe {
             (self.fp.get_image_opaque_capture_data_ext)(
                 self.handle,
                 images.len() as u32,
                 images.as_ptr(),
-                host_address_range,
+                host_address_range.as_mut_ptr(),
             )
             .result()
         }
@@ -27,14 +27,14 @@ impl crate::ext::descriptor_heap::Device {
     pub unsafe fn get_tensor_opaque_capture_data_arm(
         &self,
         tensors: &[vk::TensorARM],
-        host_address_range: &mut vk::HostAddressRangeEXT<'_>,
+        host_address_range: &mut [vk::HostAddressRangeEXT<'_>],
     ) -> VkResult<()> {
         unsafe {
             (self.fp.get_tensor_opaque_capture_data_arm)(
                 self.handle,
                 tensors.len() as u32,
                 tensors.as_ptr(),
-                host_address_range,
+                host_address_range.as_mut_ptr(),
             )
             .result()
         }
@@ -45,7 +45,7 @@ impl crate::ext::descriptor_heap::Device {
     pub unsafe fn cmd_bind_resource_heap(
         &self,
         command_buffer: vk::CommandBuffer,
-        bind_heap_info: &mut vk::BindHeapInfoEXT<'_>,
+        bind_heap_info: &vk::BindHeapInfoEXT<'_>,
     ) {
         unsafe { (self.fp.cmd_bind_resource_heap_ext)(command_buffer, bind_heap_info) }
     }
@@ -55,7 +55,7 @@ impl crate::ext::descriptor_heap::Device {
     pub unsafe fn cmd_bind_sampler_heap(
         &self,
         command_buffer: vk::CommandBuffer,
-        bind_heap_info: &mut vk::BindHeapInfoEXT<'_>,
+        bind_heap_info: &vk::BindHeapInfoEXT<'_>,
     ) {
         unsafe { (self.fp.cmd_bind_sampler_heap_ext)(command_buffer, bind_heap_info) }
     }
@@ -65,7 +65,7 @@ impl crate::ext::descriptor_heap::Device {
     pub unsafe fn cmd_push_data(
         &self,
         command_buffer: vk::CommandBuffer,
-        push_data_info: &mut vk::PushDataInfoEXT<'_>,
+        push_data_info: &vk::PushDataInfoEXT<'_>,
     ) {
         unsafe { (self.fp.cmd_push_data_ext)(command_buffer, push_data_info) }
     }
@@ -74,14 +74,13 @@ impl crate::ext::descriptor_heap::Device {
     #[inline]
     pub unsafe fn register_custom_border_color(
         &self,
-        device: vk::Device,
         border_color: &vk::SamplerCustomBorderColorCreateInfoEXT<'_>,
         request_index: bool,
     ) -> VkResult<u32> {
         let mut index = mem::MaybeUninit::uninit();
         unsafe {
             (self.fp.register_custom_border_color_ext)(
-                device,
+                self.handle,
                 border_color,
                 u32::from(request_index),
                 index.as_mut_ptr(),
@@ -92,24 +91,23 @@ impl crate::ext::descriptor_heap::Device {
 
     /// <https://docs.vulkan.org/refpages/latest/refpages/source/vkUnregisterCustomBorderColorEXT.html>
     #[inline]
-    pub unsafe fn unregister_custom_border_color(&self, device: vk::Device, index: u32) {
-        unsafe { (self.fp.unregister_custom_border_color_ext)(device, index) }
+    pub unsafe fn unregister_custom_border_color(&self, index: u32) {
+        unsafe { (self.fp.unregister_custom_border_color_ext)(self.handle, index) }
     }
 
     /// <https://docs.vulkan.org/refpages/latest/refpages/source/vkWriteResourceDescriptorsEXT.html>
     #[inline]
     pub unsafe fn write_resource_descriptors(
         &self,
-        device: vk::Device,
         resources: &[vk::ResourceDescriptorInfoEXT<'_>],
-        descriptors: &vk::HostAddressRangeEXT<'_>,
+        descriptors: &[vk::HostAddressRangeEXT<'_>],
     ) -> VkResult<()> {
         unsafe {
             (self.fp.write_resource_descriptors_ext)(
-                device,
+                self.handle,
                 resources.len() as u32,
                 resources.as_ptr(),
-                descriptors,
+                descriptors.as_ptr(),
             )
         }
         .result()
@@ -119,16 +117,15 @@ impl crate::ext::descriptor_heap::Device {
     #[inline]
     pub unsafe fn write_sampler_descriptors(
         &self,
-        device: vk::Device,
         samplers: &[vk::SamplerCreateInfo<'_>],
-        descriptors: &vk::HostAddressRangeEXT<'_>,
+        descriptors: &[vk::HostAddressRangeEXT<'_>],
     ) -> VkResult<()> {
         unsafe {
             (self.fp.write_sampler_descriptors_ext)(
-                device,
+                self.handle,
                 samplers.len() as u32,
                 samplers.as_ptr(),
-                descriptors,
+                descriptors.as_ptr(),
             )
         }
         .result()
